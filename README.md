@@ -7,6 +7,14 @@ The lab simulates attacker behavior using Burp Suite and analyzes authentication
 
 ---
 
+## 🏗️ Architecture (High-Level Design)
+
+This architecture represents the end-to-end flow of brute force attack detection, from web application interaction to SIEM-based alerting and SOC response.
+
+![Architecture](screenshots/architecture.png)
+
+---
+
 ## 🛠️ Tools & Technologies
 - Splunk Enterprise (SIEM)
 - Splunk Universal Forwarder (Log Collection)
@@ -16,100 +24,94 @@ The lab simulates attacker behavior using Burp Suite and analyzes authentication
 
 ---
 
-## 🚨 Use Case: Brute Force Attack Detection
+## 🌐 Web Application (Attack Surface)
 
-### 🎯 Objective
-Detect multiple failed login attempts and identify brute force behavior using log correlation based on:
-- Source IP
-- Username
-- Time window
-- Failed login count
+![Login Page](screenshots/1_login_page.png)
 
 ---
 
-## 🔍 Detection Logic
+## 🧪 Attack Simulation (Burp Suite)
 
-Brute force activity is identified when:
-- 4–10 failed attempts → Medium severity
-- >10 failed attempts within 5–15 minutes → High severity
+### 🔹 Intercepting Login Request
+![Burp Intercept](screenshots/2_burp_intercept.png)
 
-### 📊 SPL Query (Example)
+### 🔹 Payload Configuration
+![Payload Setup](screenshots/3_payload_setup.png)
+
+### 🔹 Brute Force Attack Execution
+![Attack Execution](screenshots/4_attack_execution.png)
+
+---
+
+## 📥 Log Generation (Web Server)
+
+![Raw Logs](screenshots/5_raw_logs.png)
+
+---
+
+## 📊 Logs in Splunk
+
+![Splunk Logs](screenshots/6_splunk_ingestion.png)
+
+### 🔹 Failed Login Attempts
+![Failed Logs](screenshots/7_failed_logs.png)
+
+---
+
+## 🔍 Detection Logic (SPL Query)
+
+The detection rule identifies repeated failed login attempts from the same source IP. This helps distinguish brute force attacks from normal user login failures.
+
 ```spl
-index=web_logs STATUS=Failed
-| stats count by src_ip, username
-| where count > 3
+index=main "STATUS: Failed"
+| rex "IP:\s(?<src_ip>\d+\.\d+\.\d+\.\d+)"
+| stats count as failed_attempts by src_ip
+| where failed_attempts > 3
 ```
 
----
-
-## 📥 Log Collection
-
-Logs were collected using Splunk Universal Forwarder from:
-- Web application authentication logs (`login.log`)
-- Apache access logs
-- System authentication logs
-
-Captured fields include:
-- Source IP
-- Username
-- Timestamp
-- Login status (SUCCESS / FAILED)
+![SPL Query](screenshots/8_detection_query.png)
 
 ---
 
-## 🧪 Attack Simulation
+## 🚨 Alert Triggered
 
-- Burp Suite used to perform brute force attack
-- Payloads configured for username & password fields
-- Multiple login attempts generated
-- Logs ingested into Splunk in real-time
+- Alert Name: **Failed Login Attempts**
+- Trigger Condition: More than 3 failed login attempts from a single IP within a defined time window
+- Severity: High
+
+![Alert](screenshots/9_alert_triggered.png)
 
 ---
 
-## 🚨 Alerting & Correlation
+## 🛡️ Incident Response (IP Blocking)
 
-- Alerts triggered when failed attempts exceed threshold
-- Correlation based on:
-  - IP address
-  - Username
-  - Time window
+- Malicious IP identified from alert  
+- Action: Source IP was temporarily blocked to prevent further unauthorized attempts  
 
-### 🔔 Alert Name:
-**Brute Force Login Attempt Detected**
+```bash
+sudo iptables -I INPUT -s 192.168.1.100 -j DROP
+```
+
+![IP Block](screenshots/10_ip_blocked.png)
 
 ---
 
 ## 🧑‍💻 SOC Investigation Workflow
 
 1. Validate alert authenticity  
-2. Check source IP (internal vs external)  
-3. Analyze number of failed attempts  
-4. Review historical login behavior  
-5. Identify multiple targeted accounts  
-6. Confirm brute force pattern  
+2. Identify source IP and targeted user  
+3. Analyze failed login count  
+4. Check historical login activity  
+5. Confirm brute force pattern  
+6. Initiate response (IP block)  
 
 ---
 
-## 🛡️ Incident Response
+## 🎯 Use Case Summary
 
-### Containment:
-- Temporarily block attacker IP (iptables)
-- Restrict access to web application
+This project simulates a real-world SOC scenario where an attacker performs a brute force attack on a web application. Logs are collected, ingested into Splunk, correlated using SPL queries, and alerts are generated for SOC analysts to investigate and respond.
 
-### Recovery:
-- Unblock IP after validation
-- Enforce password reset (if needed)
-
----
-
-## 📊 Screenshots
-
-> (Add your screenshots in /screenshots folder)
-
-- Splunk dashboard
-- Failed login logs
-- Alert triggered
-- Burp Suite attack simulation
+It demonstrates end-to-end threat detection, analysis, and response workflow.
 
 ---
 
