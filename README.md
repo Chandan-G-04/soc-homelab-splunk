@@ -61,6 +61,7 @@ This architecture represents the end-to-end flow of brute force attack detection
 ## 🔍 Detection Logic (SPL Query)
 
 The detection rule identifies repeated failed login attempts from the same source IP. This helps distinguish brute force attacks from normal user login failures.
+To reduce false positives, thresholds can be tuned based on normal user behavior and time-based correlation.
 
 ```spl
 index=main "STATUS: Failed"
@@ -77,7 +78,7 @@ index=main "STATUS: Failed"
 
 - Alert Name: **Failed Login Attempts**
 - Trigger Condition: More than 3 failed login attempts from a single IP within a defined time window
-- Severity: High
+- Severity: High (based on repeated failed attempts indicating automated attack behavior)
 
 ![Alert](screenshots/9_alert_triggered.png)
 
@@ -86,7 +87,8 @@ index=main "STATUS: Failed"
 ## 🛡️ Incident Response (IP Blocking)
 
 - Malicious IP identified from alert  
-- Action: Source IP was temporarily blocked to prevent further unauthorized attempts  
+- Action: Source IP was temporarily blocked to prevent further unauthorized attempts.
+- Further actions can include user notification, account lockout, and continuous monitoring for repeated attempts.  
 
 ```bash
 sudo iptables -I INPUT -s 192.168.1.100 -j DROP
