@@ -139,4 +139,4 @@ It demonstrates end-to-end threat detection, analysis, and response workflow.
 
 ## 👤 Author
 Chandan G  
-Aspiring SOC Analyst | SIEM | Blue Team
+Junior SOC Analyst | SIEM | Blue Team
