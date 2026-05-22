@@ -1,0 +1,10 @@
+// Rule Name   : Brute Force Detection
+// Description : Detects repeated failed login attempts from
+//               the same source IP on a web application
+// MITRE ATT&CK: T1110 - Brute Force
+// Threshold   : More than 3 failed attempts per source IP
+
+index=main "STATUS: Failed"
+| rex "IP:\s(?<src_ip>\d+\.\d+\.\d+\.\d+)"
+| stats count as failed_attempts by src_ip
+| where failed_attempts > 3
